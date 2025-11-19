@@ -57,7 +57,10 @@ export default function HomeScreen() {
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 40 }}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={{ paddingBottom: 40 }}
+    >
       <Text style={styles.title}>DataWork – Registro Diário</Text>
 
       <Text style={styles.subtitle}>Como você está hoje?</Text>
@@ -107,9 +110,14 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, marginTop: 40 },
-  title: { fontSize: 24, fontWeight: "bold" },
-  subtitle: { marginTop: 20, fontSize: 16 },
+  container: {
+    flex: 1,
+    padding: 20,
+    marginTop: 40,
+    backgroundColor: "#fff", // fundo branco
+  },
+  title: { fontSize: 24, fontWeight: "bold", color: "#000" },
+  subtitle: { marginTop: 20, fontSize: 16, color: "#000" },
   buttonsRow: { flexDirection: "row", marginVertical: 15, justifyContent: "space-between" },
   numberButton: {
     padding: 15,
@@ -123,7 +131,7 @@ const styles = StyleSheet.create({
   },
   numberText: { fontSize: 18, color: "#fff", fontWeight: "bold" },
   section: { marginTop: 25 },
-  sectionTitle: { fontSize: 18, fontWeight: "bold" },
-  sectionContent: { fontSize: 16, marginTop: 5 },
-  listItem: { padding: 5, fontSize: 16 },
+  sectionTitle: { fontSize: 18, fontWeight: "bold", color: "#000" },
+  sectionContent: { fontSize: 16, marginTop: 5, color: "#000" },
+  listItem: { padding: 5, fontSize: 16, color: "#000" },
 });
