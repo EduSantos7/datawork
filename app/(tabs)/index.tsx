@@ -1,98 +1,129 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import React, { useEffect, useState } from "react";
+import {
+  Button,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+type Registro = {
+  dia: string;
+  valor: number;
+};
+
+const coresBotoes = ["#FF6B6B", "#FFB86B", "#FFD93D", "#6BCB77", "#4D96FF"];
 
 export default function HomeScreen() {
-  return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+  const [valorHoje, setValorHoje] = useState<number | null>(null);
+  const [historico, setHistorico] = useState<Registro[]>([]);
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+  const hoje = new Date().toISOString().split("T")[0];
+
+  useEffect(() => {
+    carregarDados();
+  }, []);
+
+  async function carregarDados() {
+    const data = await AsyncStorage.getItem("registros");
+    if (data) {
+      const registros: Registro[] = JSON.parse(data);
+      setHistorico(registros);
+      const hojeRegistro = registros.find((r) => r.dia === hoje);
+      if (hojeRegistro) setValorHoje(hojeRegistro.valor);
+    }
+  }
+
+  async function salvarValor() {
+    if (!valorHoje) return;
+
+    const novoHist = [
+      ...historico.filter((item) => item.dia !== hoje),
+      { dia: hoje, valor: valorHoje },
+    ].sort((a, b) => (a.dia > b.dia ? 1 : -1));
+
+    setHistorico(novoHist);
+    await AsyncStorage.setItem("registros", JSON.stringify(novoHist));
+  }
+
+  function mediaSemana() {
+    const ultimos7 = historico.slice(-7);
+    if (ultimos7.length === 0) return "0";
+    return (
+      ultimos7.reduce((s, i) => s + Number(i.valor), 0) / ultimos7.length
+    ).toFixed(1);
+  }
+
+  return (
+    <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 40 }}>
+      <Text style={styles.title}>DataWork – Registro Diário</Text>
+
+      <Text style={styles.subtitle}>Como você está hoje?</Text>
+
+      <View style={styles.buttonsRow}>
+        {[1, 2, 3, 4, 5].map((n) => (
+          <TouchableOpacity
+            key={n}
+            onPress={() => setValorHoje(n)}
+            style={[
+              styles.numberButton,
+              { backgroundColor: coresBotoes[n - 1] },
+              valorHoje === n && styles.numberButtonSelected,
+            ]}
+          >
+            <Text style={styles.numberText}>{n}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      <Button title="Salvar Hoje" onPress={salvarValor} />
+
+      {/* Média da semana */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Média da semana:</Text>
+        <Text style={styles.sectionContent}>{mediaSemana()}</Text>
+      </View>
+
+      {/* Histórico */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Últimos registros:</Text>
+        {historico.length === 0 ? (
+          <Text style={styles.sectionContent}>Nenhum registro ainda.</Text>
+        ) : (
+          historico
+            .slice()
+            .reverse()
+            .map((item) => (
+              <Text key={item.dia} style={styles.listItem}>
+                {item.dia}: {item.valor}
+              </Text>
+            ))
+        )}
+      </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  container: { flex: 1, padding: 20, marginTop: 40 },
+  title: { fontSize: 24, fontWeight: "bold" },
+  subtitle: { marginTop: 20, fontSize: 16 },
+  buttonsRow: { flexDirection: "row", marginVertical: 15, justifyContent: "space-between" },
+  numberButton: {
+    padding: 15,
+    borderRadius: 8,
+    width: 50,
+    alignItems: "center",
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  numberButtonSelected: {
+    borderWidth: 3,
+    borderColor: "#000",
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
-  },
+  numberText: { fontSize: 18, color: "#fff", fontWeight: "bold" },
+  section: { marginTop: 25 },
+  sectionTitle: { fontSize: 18, fontWeight: "bold" },
+  sectionContent: { fontSize: 16, marginTop: 5 },
+  listItem: { padding: 5, fontSize: 16 },
 });
