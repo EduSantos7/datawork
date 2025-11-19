@@ -25,7 +25,6 @@ In the output, you'll find options to open the app in a
 
 
 
-## Get a fresh project
 
 When you're ready, run:
 
